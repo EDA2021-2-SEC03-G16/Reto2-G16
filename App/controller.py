@@ -30,7 +30,7 @@ import csv
 El controlador se encarga de mediar entre la vista y el modelo.
 """
 
-# Inicialización del Catálogo de libros
+# Inicialización del Catálogo 
 
 def initCatalog():
     """
@@ -39,25 +39,26 @@ def initCatalog():
     catalog = model.newCatalog()
     return catalog
 
-# Funciones para la carga de datos
+# Carga de datos
 
 def loadData(catalog):
     """
     Carga los datos de los archivos y cargar los datos en la
     estructura de datos
     """
-    t1=loadArtists(catalog)
-    t2=loadArtworks(catalog)
-    print("("+str(t1+t2)+")")
-    print("Nacionalidad"+str(t1))
-    print("Medio"+str(t2))
+    artist=loadArtists(catalog)
+    artworks=loadArtworks(catalog)
+    print("("+str(artist+artworks)+")")
+    print("Técnica"+str(artworks))
+    print("Nacionalidad"+str(artist))
+    
     
 
 
 def loadArtists(catalog):
 
     start_time = time.process_time() 
-    booksfile = cf.data_dir + 'MoMA/Artists-utf8-small.csv'
+    booksfile = cf.data_dir + 'MoMA/Artists-utf8-large.csv'
     input_file = csv.DictReader(open(booksfile, encoding='utf-8'))
     for artist in input_file:
         model.addArtist(catalog, artist)
@@ -68,7 +69,7 @@ def loadArtists(catalog):
 def loadArtworks(catalog):
 
     start_time = time.process_time() 
-    tagsfile = cf.data_dir + 'MoMA/Artworks-utf8-small.csv'
+    tagsfile = cf.data_dir + 'MoMA/Artworks-utf8-large.csv'
     input_file = csv.DictReader(open(tagsfile, encoding='utf-8'))
     for artwork in input_file:
         model.addArtwork(catalog, artwork)
@@ -76,12 +77,11 @@ def loadArtworks(catalog):
     elapsed_time_mseg = (stop_time - start_time)*1000
     return elapsed_time_mseg  
         
-# Funciones de ordenamiento
 
 # Funciones de consulta sobre el catálogo
 
-def medioAntiguo(catalog,num,medio):
-    return model.medioAntiguo(catalog,num,medio)
+def Tecnica(catalog,no,tec):
+    return model.Tecnica(catalog,no,tec)
 
 def ArtistsSize(catalog):
     return model.ArtistsSize(catalog)

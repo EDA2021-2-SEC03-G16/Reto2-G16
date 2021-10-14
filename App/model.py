@@ -1,7 +1,7 @@
 ﻿import config as cf
 import time
 from DISClib.ADT import list as lt
-from DISClib.ADT import map as mp
+from DISClib.ADT import map as map
 from DISClib.DataStructures import mapentry as me
 from DISClib.Algorithms.Sorting import shellsort as sa
 assert cf
@@ -9,90 +9,74 @@ assert cf
 # Construccion de modelos
 
 def newCatalog():
-
-    catalog = {'Artistas': None,
-               'Obras': None,
-               'Medios Obras': None}
-
-    catalog['Artistas'] = mp.newMap(76,
-                                   maptype='PROBING',
-                                   loadfactor=4.0)
-
-    catalog['Obras'] = mp.newMap(294,
-                                   maptype='PROBING',
-                                   loadfactor=4.0)
-
-    catalog['Medios Obras'] = mp.newMap(maptype='CHAINING',loadfactor=0.80)
-
-    catalog["Nacionalidad Artistas"] = mp.newMap(maptype='CHAINING',loadfactor=0.80)
+    catalog = {'Artistas': None,'Obras': None,'Tecnica Obras': None}
+    catalog['Artistas'] = map.newMap(76,maptype='PROBING',loadfactor=4.0)
+    catalog['Obras'] = map.newMap(294,maptype='PROBING',loadfactor=4.0)
+    catalog['Tecnica Obras'] = map.newMap(maptype='CHAINING',loadfactor=0.80)
+    catalog["Nacionalidad Artistas"] = map.newMap(maptype='CHAINING',loadfactor=0.80)
     return catalog
 
-# Funciones para agregar informacion al catalogo
+def nationality (obras,artwork):
+
+    nacionality=map.contains(obras, artwork["Nationality"])
+
+    if nacionality:
+        if artwork["Nationality"]!="":
+            nacionalidad=map.get(obras,artwork["Nationality"])
+            nacionalidad=me.getValue(nacionalidad)
+            lt.addLast(nacionalidad,artwork)
+        
+    else:
+        list=lt.newList("ARRAY_LIST")
+        lt.addLast(list,artwork)
+        map.put(obras, artwork["Nationality"],list)
+
+def medium (obras,artwork):
+
+    technic=map.contains(obras, artwork["Medium"])
+
+    if technic:
+        if artwork["Medium"]!="":
+            tecnica=map.get(obras,artwork["Medium"])
+            tecnica=me.getValue(tecnica)
+            lt.addLast(tecnica,artwork)
+        
+    else:
+        list=lt.newList("ARRAY_LIST")
+        lt.addLast(list,artwork)
+        map.put(obras, artwork["Medium"],list)
+#  Informacion del catalogo
 
 def addArtist(catalog, artist):
-    
+
     artistas=catalog["Nacionalidad Artistas"]
-    mp.put(catalog['Artistas'], int(artist["ConstituentID"]), artist)
-    add_map_bynationality(artistas,artist)
+    map.put(catalog['Artistas'], int(artist["ConstituentID"]), artist)
+    nationality(artistas,artist)
 
 def addArtwork (catalog, artwork):
 
-    obras=catalog['Medios Obras']
-
-    mp.put(catalog['Obras'], int(artwork["ObjectID"]), artwork)
-    add_map_bymedium(obras,artwork)
-
-def add_map_bymedium (obras,artwork):
-
-    b=mp.contains(obras, artwork["Medium"])
-
-    if b:
-        if artwork["Medium"]!="":
-            a=mp.get(obras,artwork["Medium"])
-            a=me.getValue(a)
-            lt.addLast(a,artwork)
-        
-    else:
-        lista=lt.newList("ARRAY_LIST")
-        lt.addLast(lista,artwork)
-        mp.put(obras, artwork["Medium"],lista)
-
-def add_map_bynationality (obras,artwork):
-
-    b=mp.contains(obras, artwork["Nationality"])
-
-    if b:
-        if artwork["Nationality"]!="":
-            a=mp.get(obras,artwork["Nationality"])
-            a=me.getValue(a)
-            lt.addLast(a,artwork)
-        
-    else:
-        lista=lt.newList("ARRAY_LIST")
-        lt.addLast(lista,artwork)
-        mp.put(obras, artwork["Nationality"],lista)
+    obras=catalog['Tecnica Obras']
+    map.put(catalog['Obras'], int(artwork["ObjectID"]), artwork)
+    medium(obras,artwork)
 
 
-# Funciones para creacion de datos
 
-# Funciones de consulta
-
-def medioAntiguo(catalogo,num,medio):
-    print(medio)#Exhibition catalogue with one loose editioned print
-    medium = mp.get(catalogo["Medios Obras"], medio)
-    oldartwork = lt.newList("ARRAY_LIST")
-    print(medium)
-    if medium:
-        lt.addLast(oldartwork, me.getValue(medium))
+def Tecnica(catalogo,no,tec):
+    print(tec+" ")
+    tecnica = map.get(catalogo["Tecnica Obras"], tec)
+    obra = lt.newList("ARRAY_LIST")
+    print(tecnica+" ")
+    if tecnica:
+        lt.addLast(obra, me.getValue(tecnica))
 
         
-    return oldartwork
+    return obra
 
 def ArtistsSize(catalog):
-    return mp.size(catalog['Artistas'])
+    return map.size(catalog['Artistas'])
 
 def ArtworksSize(catalog):
-    return mp.size(catalog['Obras'])
+    return map.size(catalog['Obras'])
 
 # Funciones utilizadas para comparar elementos dentro de una lista
 

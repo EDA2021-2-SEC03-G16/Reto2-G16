@@ -51,15 +51,15 @@ operación solicitada
 #MENU
 
 def printMenu():
-    print("___________________________________________")
+    print("*******************************************")
     print("    BIENVENIDO AL CATALOGO DE MoMA'S")
-    print("___________________________________________")
+    print("*****       ********       *******    *****")
     print("")
-    print("1 ) Cargar información en el catálogo")
-    print("2 ) Obras mas antiguas por medio")
-    print("0 ) Salir")
+    print("1. Cargar información del catálogo")
+    print("2. Obras por Tecnica")
+    print("0. Salir")
     print("")
-    print("___________________________________________")
+    print("*******************************************")
 
 #CARGA DE DATOS [1]
 def initCatalog():
@@ -72,29 +72,29 @@ catalog = None
 
 #REQ1 [2]
 
-def medioAntiguo(catalog):
-    num=int(input("Ingrese el numero de obras que quiere ver: "))
-    medio=input("Ingrese el medio que desea consultar: ")
-    antiguos=controller.medioAntiguo(catalog,num,medio)
-    return antiguos
+def Tecnicas(catalog):
+    no=int(input("Ingrese el numero de obras para consultar: "))
+    tec=input("Ingrese la técnica para consultar: ")
+    ret=controller.Tecnica(catalog,no,tec)
+    return ret
 
 #MENU PRINCIPAL
 
 while True:
     printMenu()
-    inputs = input('Seleccione una opción para continuar\n')
+    inputs = input('Escoja una opción para continuar\n')
     if int(inputs[0]) == 1:
-        print("Cargando información de los archivos ....") 
+        print("Cargando información ***") 
         catalog = initCatalog()
         loadData(catalog)
         print(" ")
-        print('Artistas cargadas: ' + str(controller.ArtistsSize(catalog)))
+        print('Artistas: ' + str(controller.ArtistsSize(catalog)))
         print(" ")
-        print('Obras cargadas: ' + str(controller.ArtworksSize(catalog)))
+        print('Obras: ' + str(controller.ArtworksSize(catalog)))
         print(" ")
 
     elif int(inputs[0]) == 2:
-        lista=medioAntiguo(catalog)
+        lista=Tecnicas(catalog)
         print(lista)
 
     else:
