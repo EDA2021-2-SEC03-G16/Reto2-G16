@@ -1,49 +1,98 @@
-﻿"""
- * Copyright 2020, Departamento de sistemas y Computación,
- * Universidad de Los Andes
- *
- *
- * Desarrolado para el curso ISIS1225 - Estructuras de Datos y Algoritmos
- *
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along withthis program.  If not, see <http://www.gnu.org/licenses/>.
- *
- * Contribuciones:
- *
- * Dario Correal - Version inicial
- """
-
-
-import config as cf
+﻿import config as cf
+import time
 from DISClib.ADT import list as lt
 from DISClib.ADT import map as mp
 from DISClib.DataStructures import mapentry as me
 from DISClib.Algorithms.Sorting import shellsort as sa
 assert cf
 
-"""
-Se define la estructura de un catálogo de videos. El catálogo tendrá dos listas, una para los videos, otra para las categorias de
-los mismos.
-"""
-
 # Construccion de modelos
 
+def newCatalog():
+
+    catalog = {'Artistas': None,
+               'Obras': None,
+               'Medios Obras': None}
+
+    catalog['Artistas'] = mp.newMap(76,
+                                   maptype='PROBING',
+                                   loadfactor=4.0)
+
+    catalog['Obras'] = mp.newMap(294,
+                                   maptype='PROBING',
+                                   loadfactor=4.0)
+
+    catalog['Medios Obras'] = mp.newMap(maptype='CHAINING',loadfactor=0.80)
+
+    catalog["Nacionalidad Artistas"] = mp.newMap(maptype='CHAINING',loadfactor=0.80)
+    return catalog
+
 # Funciones para agregar informacion al catalogo
+
+def addArtist(catalog, artist):
+    
+    artistas=catalog["Nacionalidad Artistas"]
+    mp.put(catalog['Artistas'], int(artist["ConstituentID"]), artist)
+    add_map_bynationality(artistas,artist)
+
+def addArtwork (catalog, artwork):
+
+    obras=catalog['Medios Obras']
+
+    mp.put(catalog['Obras'], int(artwork["ObjectID"]), artwork)
+    add_map_bymedium(obras,artwork)
+
+def add_map_bymedium (obras,artwork):
+
+    b=mp.contains(obras, artwork["Medium"])
+
+    if b:
+        if artwork["Medium"]!="":
+            a=mp.get(obras,artwork["Medium"])
+            a=me.getValue(a)
+            lt.addLast(a,artwork)
+        
+    else:
+        lista=lt.newList("ARRAY_LIST")
+        lt.addLast(lista,artwork)
+        mp.put(obras, artwork["Medium"],lista)
+
+def add_map_bynationality (obras,artwork):
+
+    b=mp.contains(obras, artwork["Nationality"])
+
+    if b:
+        if artwork["Nationality"]!="":
+            a=mp.get(obras,artwork["Nationality"])
+            a=me.getValue(a)
+            lt.addLast(a,artwork)
+        
+    else:
+        lista=lt.newList("ARRAY_LIST")
+        lt.addLast(lista,artwork)
+        mp.put(obras, artwork["Nationality"],lista)
+
 
 # Funciones para creacion de datos
 
 # Funciones de consulta
+
+def medioAntiguo(catalogo,num,medio):
+    print(medio)#Exhibition catalogue with one loose editioned print
+    medium = mp.get(catalogo["Medios Obras"], medio)
+    oldartwork = lt.newList("ARRAY_LIST")
+    print(medium)
+    if medium:
+        lt.addLast(oldartwork, me.getValue(medium))
+
+        
+    return oldartwork
+
+def ArtistsSize(catalog):
+    return mp.size(catalog['Artistas'])
+
+def ArtworksSize(catalog):
+    return mp.size(catalog['Obras'])
 
 # Funciones utilizadas para comparar elementos dentro de una lista
 
