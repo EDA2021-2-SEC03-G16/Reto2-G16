@@ -22,7 +22,7 @@
 
 import config as cf
 import time
-import model
+import model as m
 import csv
 
 
@@ -36,7 +36,7 @@ def initCatalog():
     """
     Llama la funcion de inicializacion del catalogo del modelo.
     """
-    catalog = model.newCatalog()
+    catalog = m.newCatalog()
     return catalog
 
 # Carga de datos
@@ -53,40 +53,55 @@ def loadData(catalog):
     print("Nacionalidad"+str(artist))
     
     
-
-
 def loadArtists(catalog):
-
     start_time = time.process_time() 
     booksfile = cf.data_dir + 'MoMA/Artists-utf8-large.csv'
     input_file = csv.DictReader(open(booksfile, encoding='utf-8'))
-    for artist in input_file:
-        model.addArtist(catalog, artist)
+    for artista in input_file:
+        m.addArtist(catalog, artista['DisplayName'], artista['ConstituentID'],
+                            artista['Nationality'], artista['BeginDate'], artista['EndDate'], artista['Gender'])
     stop_time = time.process_time() 
     elapsed_time_mseg = (stop_time - start_time)*1000  
     return elapsed_time_mseg     
 
-def loadArtworks(catalog):
 
+def loadArtworks(catalog):
     start_time = time.process_time() 
     tagsfile = cf.data_dir + 'MoMA/Artworks-utf8-large.csv'
     input_file = csv.DictReader(open(tagsfile, encoding='utf-8'))
     for artwork in input_file:
-        model.addArtwork(catalog, artwork)
-    stop_time = time.process_time() 
+        lstid = (artwork['ConstituentID'][1:-1]).split(", ")
+        lstmedium = artwork['Medium'].split(",")
+        m.addArtwork(catalog, artwork['Title'], artwork['DateAcquired'], lstmedium,
+                         artwork['Dimensions'], lstid, artwork['ObjectID'], artwork['CreditLine'], artwork['Date'],
+                         artwork['Classification'],artwork['Height (cm)'], artwork['Width (cm)'], artwork['Department'], 
+                         artwork['Length (cm)'], artwork['Weight (kg)'])
+    stop_time = time.process_time()
     elapsed_time_mseg = (stop_time - start_time)*1000
-    return elapsed_time_mseg  
+    return elapsed_time_mseg
         
 
 # Funciones de consulta sobre el catálogo
 
-def Tecnica(catalog,no,tec):
-    return model.Tecnica(catalog,no,tec)
-
 def ArtistsSize(catalog):
-    return model.ArtistsSize(catalog)
+    return m.ArtistsSize(catalog)
+
 
 def ArtworksSize(catalog):
-    return model.ArtworksSize(catalog)
+    return m.ArtworksSize(catalog)
 
-    
+
+def sortArtists(catalog,year1,year2):
+    return m.sortArtists(catalog,year1,year2)
+
+
+def sortArtworksByAdDate(catalog, d1, d2):
+    return m.sortArtworksByAdDate(catalog, d1, d2)
+
+
+def classifyArtists(catalog,name):
+    return m.classifyArtists(catalog,name)
+
+
+def ObrasPorNacionalidad(catalog):
+    return m.ObrasPorNacionalidad(catalog)

@@ -20,9 +20,12 @@
  * along withthis program.  If not, see <http://www.gnu.org/licenses/>.
  """
 
+
+
 import config as cf
 import sys
-import controller
+import controller as c
+from DISClib.ADT import map as map
 from DISClib.ADT import list as lt
 assert cf
 
@@ -34,49 +37,79 @@ se hace la solicitud al controlador para ejecutar la
 operación solicitada
 """
 
-import config as cf
-import sys
-import controller
-from DISClib.ADT import map as mp
-from DISClib.ADT import list as lt
-assert cf
+def printResultados3(respuesta):
+        print('En el rango seleccionado hay ' + str(respuesta[1]) + ' artistas.')
+        print("****************************************************************")
+        print('Los 3 primeros artistas del rango son: ')
+        print(respuesta[0]['elements'][0])
+        print(respuesta[0]['elements'][1])
+        print(respuesta[0]['elements'][2])
+        print("****************************************************************")
+        print('Las ultimas 3 obras del rango son: ')
+        print(respuesta[0]['elements'][-1])
+        print(respuesta[0]['elements'][-2])
+        print(respuesta[0]['elements'][-3])
+        print("****************************************************************")
+
+def printSortedResults(result):
+
+    print('En el rango dado hay: ' + str(result[1]))
+    print('De esas obras se compraron: '+ str(result[2]))
+    print('Las primeras 3 obras del rango son: ')
+    print(result[0]['elements'][0])
+    print(result[0]['elements'][1])
+    print(result[0]['elements'][2])
+    print('Las ultimas 3 obras del rango en son: ')
+    print(result[0]['elements'][-1])
+    print(result[0]['elements'][-2])
+    print(result[0]['elements'][-3])
 
 
-"""
-La vista se encarga de la interacción con el usuario
-Presenta el menu de opciones y por cada seleccion
-se hace la solicitud al controlador para ejecutar la
-operación solicitada
-"""
+def printObrasPorNacionalidad(respuesta):
+    lista = lt.subList(respuesta[0], 1, 10)
+    fechaInicio = [respuesta[1]['elements'][0], respuesta[1]['elements'][1], respuesta[1]['elements'][2], respuesta[1]['elements'][3], respuesta[1]['elements'][4]]
+    fechaFin = [respuesta[1]['elements'][-1], respuesta[1]['elements'][-2], respuesta[1]['elements'][-3], respuesta[1]['elements'][-4], respuesta[1]['elements'][-5]]
+    print('TOP 10 paises: ')
+    print(lista['elements'])
+    size = lt.size(respuesta[1])
+    print('El número de obras son: ' + str(size))
+    print('Las primeras 3 obras son: ')
+    print(fechaInicio[0])
+    print(fechaInicio[1])
+    print(fechaInicio[2])
+    print('Las últimas 3 obras son: ')
+    print(fechaFin[0])
+    print(fechaFin[1])
+    print(fechaFin[2])
+
 #MENU
 
 def printMenu():
     print("*******************************************")
-    print("    BIENVENIDO AL CATALOGO DE MoMA'S")
+    print("    BIENVENIDO AL CATALOGO DE MoMA'S       ")
     print("*****       ********       *******    *****")
     print("")
     print("1. Cargar información del catálogo")
-    print("2. Obras por Tecnica")
-    print("0. Salir")
+    print("2. Listar cronologicamente los artistas.")
+    print("3. Listar cronologicamente las adquisiciones.")
+    print("4. Clasificar las obras por técnica.")
+    print("5. Clasificar las obras por la nacionalidad.")
+    print("6. Transporte de obras por departamento.")
+    print("0. Salir.")
     print("")
     print("*******************************************")
 
 #CARGA DE DATOS [1]
 def initCatalog():
-    return controller.initCatalog()
+    return c.initCatalog()
 
 def loadData(catalog):
-    controller.loadData(catalog)
+    c.loadData(catalog)
 
 catalog = None
 
 #REQ1 [2]
 
-def Tecnicas(catalog):
-    no=int(input("Ingrese el numero de obras para consultar: "))
-    tec=input("Ingrese la técnica para consultar: ")
-    ret=controller.Tecnica(catalog,no,tec)
-    return ret
 
 #MENU PRINCIPAL
 
@@ -88,15 +121,33 @@ while True:
         catalog = initCatalog()
         loadData(catalog)
         print(" ")
-        print('Artistas: ' + str(controller.ArtistsSize(catalog)))
+        print('Número de Artistas en el catálogo: ' + str(c.ArtistsSize(catalog)))
         print(" ")
-        print('Obras: ' + str(controller.ArtworksSize(catalog)))
+        print('Número de Obras en el catálogo: ' + str(c.ArtworksSize(catalog)))
         print(" ")
 
     elif int(inputs[0]) == 2:
-        lista=Tecnicas(catalog)
-        print(lista)
+        anoainicial = int(input('Indique el año inicial:'))
+        anofinal = int(input('Indique el año final:'))
+        respuesta = c.sortArtists(catalog,anoainicial,anofinal)
+        printResultados3(respuesta)
 
+    elif int(inputs[0]) == 3:
+        ainicial=input('Indique la fecha inicial de las obras que desea consultar (AAAA-MM-DD): ')
+        afinal=input('Indique la fecha final de las obras que desea consultar (AAAA-MM-DD): ')
+        result = c.sortArtworksByAdDate(catalog, ainicial, afinal)
+        printSortedResults(result)
+        print("****************************************************************")
+
+    elif int(inputs[0]) == 4:
+        pass
+
+    elif int(inputs[0]) == 5:
+        result = c.ObrasPorNacionalidad(catalog)
+        printObrasPorNacionalidad(result)
+
+    elif int(inputs[0]) == 6:
+        pass
     else:
         sys.exit(0)
 sys.exit(0)
