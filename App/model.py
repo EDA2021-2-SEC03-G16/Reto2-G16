@@ -168,55 +168,55 @@ def addArtistaObra(catalog, nameArtist, artwork):
     lt.addLast(artist['artworks'], artwork)
 
 
-def addMediumBono(medio, namemedium, artwork):
-    existe = map.contains(medio, namemedium)
+def addMediumBono(tecnica, namemedium, artwork):
+    existe = map.contains(tecnica, namemedium)
     if existe:
-        entry = map.get(medio, namemedium)
+        entry = map.get(tecnica, namemedium)
         medium = me.getValue(entry)
     else:
         medium = nuevaTecnica(namemedium)
-        map.put(medio, namemedium, medium)
+        map.put(tecnica, namemedium, medium)
     lt.addLast(medium['artworks'], artwork)
 
 
-def nuevaFecha(nameDate):
+def nuevaFecha(nombre):
     date = {'name': "","artists": None}
-    date['name'] = nameDate
+    date['name']=nombre
     date['artists'] = lt.newList('SINGLE_LINKED', compareArtistsFechaInicial)
     return date
 
 
-def nuevoAdquirido(nameDate):
+def nuevoAdquirido(nombre):
     date = {'name': "","artworks": None}
-    date['name'] = nameDate
+    date['name']=nombre
     date['artworks'] = lt.newList('SINGLE_LINKED', compareArtworksFecha)
     return date
 
 
-def nuevaTecnica(name):
-    medium = {'name': "","artworks": None}
-    medium['name'] = name
+def nuevaTecnica(nombre):
+    medium={'name': "","artworks": None}
+    medium['name']=nombre
     medium['artworks'] = lt.newList('SINGLE_LINKED', compararArtworksTecnica)
     return medium
 
 
-def nuevaNacionalidad(name):
+def nuevaNacionalidad(pais):
     nationality = {'name': "","artworks": None}
-    nationality['name'] = name
+    nationality['name'] =pais
     nationality['artworks'] = lt.newList('SINGLE_LINKED', compareArtworksNacionalidad)
     return nationality
 
 
-def nuevoDepartamento(name):
+def nuevoDepartamento(departamento):
     department = {'name': "","artworks": None}
-    department['name'] = name
+    department['name'] = departamento
     department['artworks'] = lt.newList('SINGLE_LINKED', compareArtworksNacionalidad)
     return department
 
 
-def nuevoArtistaObra(name):
+def nuevoArtistaObra(nombre):
     artistaObra = {'name': "","artworks": None}
-    artistaObra['name'] = name
+    artistaObra['name'] = nombre
     artistaObra['artworks'] = lt.newList('SINGLE_LINKED', compareArtworksNacionalidad)
     return artistaObra
 
@@ -225,34 +225,27 @@ def encontrarNombresyNacionalidades(artistas, catalog):
     nombres = lt.newList(datastructure="ARRAY_LIST")
     nacionalidades = lt.newList(datastructure="ARRAY_LIST")
     for id in artistas:
-        encontro = False
+        existe = False
         i = 0
-        while not encontro and i< lt.size(catalog["artists"]):
-            if lt.getElement(catalog["artists"],i)["ConstituentID"] == str(id).strip():
+        while not existe and i< lt.size(catalog["artists"]):
+            if lt.getElement(catalog["artists"],i)["ConstituentID"]==str(id).strip():
                 lt.addLast(nombres, lt.getElement(catalog["artists"],i)["DisplayName"])
                 lt.addLast(nacionalidades, lt.getElement(catalog["artists"],i)["Nationality"])
-                encontro = True
+                existe = True
             i += 1
     return nombres, nacionalidades
-
-
-def getArtworksByMedium(catalog, namemedium):
-    medium = map.get(catalog['tecnica'], namemedium)
-    if medium:
-        return me.getValue(medium)
-    return None
 
 
 def artworksNacionalidad(catalog):
     llaves = map.keySet(catalog["nacionalidad"])
     lstNacion = lt.newList(datastructure="ARRAY_LIST")
-    for key in lt.iterator(llaves):
-        tamanio = cantidadObrasPais(catalog, key)
-        lt.addLast(lstNacion, (key,tamanio))
-    ordenada = merge.sort(lstNacion, compararNacionalidad)
-    nacionMayor = lt.getElement(ordenada,1)[0]
-    nacion = map.get(catalog["nacionalidad"], nacionMayor)
-    result = (me.getValue(nacion))["artworks"]
+    for llave in lt.iterator(llaves):
+        tamanio = cantidadObrasPais(catalog, llave)
+        lt.addLast(lstNacion, (llave,tamanio))
+    ordenada=merge.sort(lstNacion, compararNacionalidad)
+    nacionMayor=lt.getElement(ordenada,1)[0]
+    nacion=map.get(catalog["nacionalidad"], nacionMayor)
+    result=(me.getValue(nacion))["artworks"]
     return ordenada, result
 
 
