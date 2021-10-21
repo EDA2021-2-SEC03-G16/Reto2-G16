@@ -107,8 +107,8 @@ def addFechaInicio(catalog, nameDate, artist):
 
 def addAdquirido(catalog, nameDate, artwork):
     fechas = catalog['dateAdquirido']
-    existDate = map.contains(fechas, str(nameDate))
-    if existDate:
+    existe = map.contains(fechas, str(nameDate))
+    if existe:
         entry = map.get(fechas, str(nameDate))
         date = me.getValue(entry)
     else:
@@ -120,8 +120,8 @@ def addAdquirido(catalog, nameDate, artwork):
 
 def addTecnica(catalog, namemedium, artwork):
     tecnicas = catalog['tecnica']
-    existmedium = map.contains(tecnicas, namemedium)
-    if existmedium:
+    existe = map.contains(tecnicas, namemedium)
+    if existe:
         entry = map.get(tecnicas, namemedium)
         medium = me.getValue(entry)
     else:
@@ -134,8 +134,8 @@ def addNacionalidad(catalog, nameNationality, artwork):
     nationalities = catalog['nacionalidad']
     if nameNationality == "":
         nameNationality = "Nationality unknown"
-    existNationality = map.contains(nationalities, nameNationality)
-    if existNationality:
+    existe = map.contains(nationalities, nameNationality)
+    if existe:
         entry = map.get(nationalities, nameNationality)
         nationality = me.getValue(entry)
     else:
@@ -146,8 +146,8 @@ def addNacionalidad(catalog, nameNationality, artwork):
 
 def addDepartmento(catalog, nameDepartment, artwork):
     departments = catalog['departamento']
-    existDepartment = map.contains(departments, nameDepartment)
-    if existDepartment:
+    existe= map.contains(departments, nameDepartment)
+    if existe:
         entry = map.get(departments, nameDepartment)
         department = me.getValue(entry)
     else:
@@ -158,8 +158,8 @@ def addDepartmento(catalog, nameDepartment, artwork):
 
 def addArtistaObra(catalog, nameArtist, artwork):
     artistas = catalog['artistaObra']
-    existArtist = map.contains(artistas, nameArtist)
-    if existArtist:
+    existe = map.contains(artistas, nameArtist)
+    if existe:
         entry = map.get(artistas, nameArtist)
         artist = me.getValue(entry)
     else:
@@ -169,8 +169,8 @@ def addArtistaObra(catalog, nameArtist, artwork):
 
 
 def addMediumBono(medio, namemedium, artwork):
-    existmedium = map.contains(medio, namemedium)
-    if existmedium:
+    existe = map.contains(medio, namemedium)
+    if existe:
         entry = map.get(medio, namemedium)
         medium = me.getValue(entry)
     else:
@@ -180,8 +180,7 @@ def addMediumBono(medio, namemedium, artwork):
 
 
 def nuevaFecha(nameDate):
-    date = {'name': "",
-            "artists": None}
+    date = {'name': "","artists": None}
     date['name'] = nameDate
     date['artists'] = lt.newList('SINGLE_LINKED', compareArtistsFechaInicial)
     return date
