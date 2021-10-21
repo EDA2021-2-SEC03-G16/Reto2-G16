@@ -19,70 +19,12 @@
  * You should have received a copy of the GNU General Public License
  * along withthis program.  If not, see <http://www.gnu.org/licenses/>.
  """
-
-
-
 import config as cf
+import time
 import sys
 import controller as c
-from DISClib.ADT import map as map
 from DISClib.ADT import list as lt
 assert cf
-
-
-"""
-La vista se encarga de la interacción con el usuario
-Presenta el menu de opciones y por cada seleccion
-se hace la solicitud al controlador para ejecutar la
-operación solicitada
-"""
-
-def printResultados3(respuesta):
-        print('En el rango seleccionado hay ' + str(respuesta[1]) + ' artistas.')
-        print("****************************************************************")
-        print('Los 3 primeros artistas del rango son: ')
-        print(respuesta[0]['elements'][0])
-        print(respuesta[0]['elements'][1])
-        print(respuesta[0]['elements'][2])
-        print("****************************************************************")
-        print('Las ultimas 3 obras del rango son: ')
-        print(respuesta[0]['elements'][-1])
-        print(respuesta[0]['elements'][-2])
-        print(respuesta[0]['elements'][-3])
-        print("****************************************************************")
-
-def printSortedResults(result):
-
-    print('En el rango dado hay: ' + str(result[1]))
-    print('De esas obras se compraron: '+ str(result[2]))
-    print('Las primeras 3 obras del rango son: ')
-    print(result[0]['elements'][0])
-    print(result[0]['elements'][1])
-    print(result[0]['elements'][2])
-    print('Las ultimas 3 obras del rango en son: ')
-    print(result[0]['elements'][-1])
-    print(result[0]['elements'][-2])
-    print(result[0]['elements'][-3])
-
-
-def printObrasPorNacionalidad(respuesta):
-    lista = lt.subList(respuesta[0], 1, 10)
-    fechaInicio = [respuesta[1]['elements'][0], respuesta[1]['elements'][1], respuesta[1]['elements'][2], respuesta[1]['elements'][3], respuesta[1]['elements'][4]]
-    fechaFin = [respuesta[1]['elements'][-1], respuesta[1]['elements'][-2], respuesta[1]['elements'][-3], respuesta[1]['elements'][-4], respuesta[1]['elements'][-5]]
-    print('TOP 10 paises: ')
-    print(lista['elements'])
-    size = lt.size(respuesta[1])
-    print('El número de obras son: ' + str(size))
-    print('Las primeras 3 obras son: ')
-    print(fechaInicio[0])
-    print(fechaInicio[1])
-    print(fechaInicio[2])
-    print('Las últimas 3 obras son: ')
-    print(fechaFin[0])
-    print(fechaFin[1])
-    print(fechaFin[2])
-
-#MENU
 
 def printMenu():
     print("*******************************************")
@@ -99,55 +41,158 @@ def printMenu():
     print("")
     print("*******************************************")
 
-#CARGA DE DATOS [1]
+
 def initCatalog():
     return c.initCatalog()
+
 
 def loadData(catalog):
     c.loadData(catalog)
 
+
+def printArtistasCronologico(artistas):
+    diccionario = lt.size(artistas)
+    print("Número total de artistas en dicho rango: "+str(diccionario)+"\n")
+    print("Los primeros y últimos 3 artistas son: ")
+    for i in range(1,4):
+        print("Nombre: "+lt.getElement(artistas,i)["DisplayName"])
+        print("Año de nacimiento: "+lt.getElement(artistas,i)["BeginDate"])
+        print("Año de fallecimiento: "+lt.getElement(artistas,i)["EndDate"])
+        print("Nacionalidad: "+lt.getElement(artistas,i)["Nationality"])
+        print("Género: "+lt.getElement(artistas,i)["Gender"])
+    for i in range(-2,1):
+        print("Nombre: "+lt.getElement(artistas,diccionario+i)["DisplayName"])
+        print("Año de nacimiento: "+lt.getElement(artistas,diccionario+i)["BeginDate"])
+        print("Año de fallecimiento: "+lt.getElement(artistas,diccionario+i)["EndDate"])
+        print("Nacionalidad: "+lt.getElement(artistas,diccionario+i)["Nationality"])
+        print("Género: "+lt.getElement(artistas,diccionario+i)["Gender"])
+        
+
+def printArtworksOrdenado(artworks):
+    diccionario = lt.size(artworks[1])
+    print("Número total de obras: "+str(diccionario)+"\n")
+    print("Número total de obras adquiridas: "+str(artworks[0])+"\n")
+    printArtworks(artworks,diccionario)
+
+
+def printArtworks(artworks, numero):
+    print("Sus primeras y últimas 3 obras son: \n")
+    for i in range(1,4):
+        print("Título: "+lt.getElement(artworks[1],i)["Title"])
+        print("Artista: "+str(lt.getElement(artworks[1],i)["Artists"]["elements"])[1:-1])
+        print("Tecnica: "+lt.getElement(artworks[1],i)["Medium"])
+        print("Dimensiones: "+lt.getElement(artworks[1],i)["Dimensions"])
+    for i in range(-2,1):
+        print("Título: "+lt.getElement(artworks[1],numero+i)["Title"])
+        print("Artista: "+str(lt.getElement(artworks[1],numero+i)["Artists"]["elements"])[1:-1])
+        print("Tecnica: "+lt.getElement(artworks[1],numero+i)["Medium"])
+        print("Dimensiones: "+lt.getElement(artworks[1],numero+i)["Dimensions"])
+    
+
+def printNacionalidadObras(respuesta):
+    print("TOP 10 de las nacionalidades son:")
+    for i in range(1,11): 
+        print(lt.getElement(respuesta[0],i)[0]+" : "+str(lt.getElement(respuesta[0],i)[1]))
+    print("La nacionalidad con más obras es: ",lt.getElement(respuesta[0],1)[0])
+    lista = lt.size(respuesta[1])
+    printArtworks(respuesta, lista)
+
+def printTransportePorDepartamento(respuesta):
+    print("Total de obras para transportar: ")
+    print(respuesta[0])
+    print("Precio estimado: ")
+    print(respuesta[1])
+    print("Las 5 obras más antiguas son: ")
+    for i in range(1, lt.size(respuesta[3])+1):
+        print("Título: "+lt.getElement(respuesta[3],i)[0]["Title"])
+        print("Artista: "+str(lt.getElement(respuesta[3],i)[0]["Artists"]["elements"])[1:-1])
+        print("Clasificación: "+lt.getElement(respuesta[3],i)[0]["Classification"])
+        print("Tecnica: "+lt.getElement(respuesta[3],i)[0]["Medium"])
+        print("Dimensiones: "+lt.getElement(respuesta[3],i)[0]["Dimensions"])
+        print("Costo del transporte: "+str(round(lt.getElement(respuesta[3],i)[1],3)))
+    print("\nLas 5 obras más costosas a transportar son: ")
+    for i in range(1, lt.size(respuesta[4])+1):
+        print("Título: "+lt.getElement(respuesta[4],i)[0]["Title"])
+        print("Artista: "+str(lt.getElement(respuesta[4],i)[0]["Artists"]["elements"])[1:-1])
+        print("Clasificación: "+lt.getElement(respuesta[4],i)[0]["Classification"])
+        print("Tecnica: "+lt.getElement(respuesta[4],i)[0]["Medium"])
+        print("Dimensiones: "+lt.getElement(respuesta[4],i)[0]["Dimensions"])
+        print("Costo del transporte: "+str(round(lt.getElement(respuesta[4],i)[1],3)))
 catalog = None
 
-#REQ1 [2]
-
-
-#MENU PRINCIPAL
-
+"""
+Menu principal
+"""
 while True:
     printMenu()
-    inputs = input('Escoja una opción para continuar\n')
+    inputs = input('Seleccione una opción: ')
     if int(inputs[0]) == 1:
-        print("Cargando información ***") 
+        print("Cargando información ***")
         catalog = initCatalog()
         loadData(catalog)
-        print(" ")
-        print('Número de Artistas en el catálogo: ' + str(c.ArtistsSize(catalog)))
-        print(" ")
-        print('Número de Obras en el catálogo: ' + str(c.ArtworksSize(catalog)))
-        print(" ")
+        sizeArtists = int(lt.size(catalog['artists']))
+        sizeArtworks = int(lt.size(catalog['artworks']))
+        print('Número de artistas cargados en el catalogo: ' + str(sizeArtists))
+        print('Número de obras cargadas en el catalogo: ' + str(sizeArtworks))
+        print('Los tres últimos artistas son:')
+        i=2
+        while i>=0:
+            diccionarioArtistas = lt.getElement(catalog['artists'],(sizeArtists-i))
+            print(diccionarioArtistas)
+            i-=1
+        print('Las últimas tres obras son: ')
+        i=2
+        while i>=0:
+            diccionarioArtworks = lt.getElement(catalog['artworks'],(sizeArtworks-i))
+            print(diccionarioArtworks)
+            i-=1
 
+    
     elif int(inputs[0]) == 2:
-        anoainicial = int(input('Indique el año inicial:'))
-        anofinal = int(input('Indique el año final:'))
-        respuesta = c.sortArtists(catalog,anoainicial,anofinal)
-        printResultados3(respuesta)
+        anioInicial = int(input("Ingrese el año incial del rango: "))
+        anioFinal = int(input("Ingrese el año final del rango: "))
+        start_time = time.process_time()
+        printArtistasCronologico(c.OrdenarArtists(catalog,anioInicial,anioFinal))
+        stop_time = time.process_time()
+        elapsed_time_mseg = (stop_time - start_time)*1000
+        print("Tiempo empleado: ",elapsed_time_mseg)
 
     elif int(inputs[0]) == 3:
-        ainicial=input('Indique la fecha inicial de las obras que desea consultar (AAAA-MM-DD): ')
-        afinal=input('Indique la fecha final de las obras que desea consultar (AAAA-MM-DD): ')
-        result = c.sortArtworksByAdDate(catalog, ainicial, afinal)
-        printSortedResults(result)
-        print("****************************************************************")
+        diaInicial = int(input("Ingrese el día incial: "))
+        mesInicial = int(input("Ingrese el mes incial: "))
+        anioInicial = int(input("Ingrese el año incial: "))
+        diaFinal = int(input("Ingrese el día final: "))
+        mesFinal = int(input("Ingrese el mes final: "))
+        anioFinal = int(input("Ingrese el año final: "))
+        start_time = time.process_time()
+        printArtworksOrdenado(c.OrdenarArtworks(catalog, anioInicial, mesInicial, diaInicial, anioFinal, mesFinal, diaFinal))
+        stop_time = time.process_time()
+        elapsed_time_mseg = (stop_time - start_time)*1000
+        print("Tiempo empleado: ",elapsed_time_mseg)
 
     elif int(inputs[0]) == 4:
         pass
+        start_time = time.process_time()
+        stop_time = time.process_time()
+        elapsed_time_mseg = (stop_time - start_time)*1000
+        print("Tiempo empleado: ",elapsed_time_mseg)
 
     elif int(inputs[0]) == 5:
-        result = c.ObrasPorNacionalidad(catalog)
-        printObrasPorNacionalidad(result)
+        start_time = time.process_time()
+        result = c.artworksNacionalidad(catalog)
+        printNacionalidadObras(result)
+        stop_time = time.process_time()
+        elapsed_time_mseg = (stop_time - start_time)*1000
+        print("Tiempo empleado: ",elapsed_time_mseg)
 
     elif int(inputs[0]) == 6:
-        pass
+        departamento = input("Ingrese el departamento a consultar el costo de transporte: ")
+        start_time = time.process_time()
+        printTransportePorDepartamento(c.costoTransDept(catalog, departamento))
+        stop_time = time.process_time()
+        elapsed_time_mseg = (stop_time - start_time)*1000
+        print("Tiempo empleado: ",elapsed_time_mseg)
+
     else:
         sys.exit(0)
 sys.exit(0)

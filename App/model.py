@@ -1,451 +1,495 @@
-﻿import config as cf
-import time
+﻿"""
+ * Copyright 2020, Departamento de sistemas y Computación,
+ * Universidad de Los Andes
+ *
+ *
+ * Desarrolado para el curso ISIS1225 - Estructuras de Datos y Algoritmos
+ *
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along withthis program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Contribuciones:
+ *
+ * Dario Correal - Version inicial
+ """
+
+
+import config as cf
+import datetime as dat
+import math
 from DISClib.ADT import list as lt
 from DISClib.ADT import map as map
 from DISClib.DataStructures import mapentry as me
-from DISClib.Algorithms.Sorting import shellsort as sa
 from DISClib.Algorithms.Sorting import mergesort as merge
 assert cf
+
+"""
+Se define la estructura de un catálogo de videos. El catálogo tendrá dos listas, una para los videos, otra para las categorias de
+los mismos.
+"""
 
 # Construccion de modelos
 
 def newCatalog():
-    catalog = {'Artistas': None,
-    'Obras': None,
-    'TecnicaObras': None,
-    'NacionalidadArtistas':None,
-    'artistId':None}
-
-    catalog['Artistas'] = map.newMap(34000,maptype='PROBING',loadfactor=0.5)
+    """
+    Inicializa el catálogo de artistas. Crea una lista vacia para guardar
+    todos los artistas, adicionalmente, crea una lista vacia para las obras. 
+    Retorna el catalogo inicializado.
+    """
+    catalog = {'artists': None,
+               'artworks': None,
+               'date': None,
+               'dateAdquirido': None,
+               'medium': None,
+               'nationality': None,
+               'artistaObra': None}
     
-    catalog['Obras'] = map.newMap(294,maptype='PROBING',loadfactor=4.0)
+    catalog['artists'] = lt.newList("SINGLED_LINKED", compareArtistsConstituentID)
     
-    catalog['TecnicaObras'] = map.newMap(1200,maptype='CHAINING',loadfactor=0.80)
+    catalog['artworks'] = lt.newList("SINGLE_LINKED", compareArtworksID)
     
-    catalog['NacionalidadArtistas'] = map.newMap(200,maptype='CHAINING',loadfactor=0.80)
+    catalog['fecha'] = map.newMap(150,maptype='CHAINING',loadfactor=4.0,comparefunction=compareArtistsFechaInicial)
 
-    catalog['FechaArtista'] = map.newMap(1200,maptype='CHAINING',loadfactor=4.0,comparefunction=compareBirthArtist)
+    catalog['dateAdquirido'] = map.newMap(900,maptype='PROBING',loadfactor=0.5,comparefunction=compareArtworksFecha)
 
-    catalog['artistID'] = map.newMap(17000,maptype='CHAINING',loadfactor=0.8,comparefunction=compareArtistsID)
+    catalog['tecnica'] = map.newMap(800,maptype='PROBING',loadfactor=0.5,comparefunction=compararArtworksTecnica)
 
-    catalog['Fecha'] = map.newMap(40000,maptype='CHAINING',loadfactor=4.0,comparefunction=compareArtworksByAdDAte)
+    catalog['nacionalidad'] = map.newMap(100,maptype='CHAINING',loadfactor=4.0,comparefunction=compareArtworksNacionalidad)
 
-    catalog['Departmento'] = map.newMap(1200,maptype='CHAINING',loadfactor=4.0,comparefunction=compareArtworksByDepartment)
+    catalog['departamento'] = map.newMap(10,maptype='CHAINING',loadfactor=4.0,comparefunction=compareArtworksByArtist)
 
-    catalog['Nacionalidad'] = map.newMap(500,maptype='CHAINING',loadfactor=4.0,comparefunction=compareCountryByNumberOfArtworks)
-
+    catalog['artistaObra'] = map.newMap(2000, maptype='PROBING', loadfactor=0.5,comparefunction=compareArtworksByArtist)
+    
     return catalog
 
-def ArtistsSize(catalog):
-    return map.size(catalog['Artistas'])
 
-def ArtworksSize(catalog):
-    return map.size(catalog['Obras'])
+def addArtist(catalog, artist):
+    lt.addLast(catalog['artists'], artist)
+    addFechaInicio(catalog, artist["BeginDate"], artist)
 
 
-def addArtist(catalog, Name, constituentid, Nationality, BeginDate, EndDate, Gender):
-    if map.contains(catalog['artistID'], constituentid) is False:
-        map.put(catalog['artistID'], constituentid, Name)
-        artista = {}
-        artista['Nationality']=Nationality
-        artista['BeginDate']=BeginDate
-        artista['EndDate']=EndDate
-        artista['Gender']=Gender
-        listaArtistaObra = lt.newList('ARRAY_LIST')
-        artista['Artworks'] = listaArtistaObra
-        map.put(catalog['Artistas'], Name, artista)
-    if map.contains(catalog['Fecha'], BeginDate) is False:
-        listaFehaArtista = lt.newList("ARRAY_LIST")
-        diccionario = {}
-        diccionario['Name']=Name
-        diccionario['BeginDate']=BeginDate
-        diccionario['Gender']=Gender
-        diccionario['Nationality']=Nationality
-        diccionario['EndDate']=EndDate
-        lt.addLast(listaFehaArtista, diccionario)
-        map.put(catalog['Fecha'], BeginDate, listaFehaArtista)
+def addArtwork(catalog, artwork):
+    nombres = encontrarNombresyNacionalidades(artwork["ConstituentID"][1:-1].split(","), catalog)
+    artwork["Artists"] = nombres[0]
+    artwork["Nationalities"] = nombres[1]
+    lt.addLast(catalog['artworks'], artwork)
+    addTecnica(catalog, artwork["Medium"], artwork)
+    addAdquirido(catalog, artwork["DateAcquired"], artwork)
+    addDepartmento(catalog, artwork["Department"], artwork)
+    for nacion in lt.iterator(artwork["Nationalities"]):
+        addNacionalidad(catalog, nacion, artwork)
+    for artista in lt.iterator(artwork["Artists"]):
+        addArtistaObra(catalog, artista, artwork)
+
+
+def addFechaInicio(catalog, nameDate, artist):
+    fechas = catalog['fecha']
+    existDate = map.contains(fechas, str(nameDate))
+    if existDate:
+        entry = map.get(fechas, str(nameDate))
+        date = me.getValue(entry)
     else:
-        diccionarioFechaArtista = {}
-        entryFechaArtista=map.get(catalog['Fecha'], BeginDate)
-        listaFechaArtista=me.getValue(entryFechaArtista)
-        diccionarioFechaArtista['name']=Name
-        diccionarioFechaArtista['Gender']=Gender
-        diccionarioFechaArtista['Nationality']=Nationality
-        diccionarioFechaArtista['BeginDate']=BeginDate
-        diccionarioFechaArtista['EndDate']=EndDate
-        lt.addLast(listaFechaArtista, diccionarioFechaArtista)
+        date = nuevaFecha(str(nameDate))
+        map.put(fechas, str(nameDate), date)
+    lt.addLast(date['artists'], artist)
 
 
-def addArtwork(catalog, title, DateAcquired, listamedium, Dimensions, listaconstituentid,
-               ObjectID,CreditLine, Date, Classification, Height, Width, Department, Length, Weight):
-
-    diccionarioObras = nuevaObra(title)
-    diccionarioObras['ObjectID']=ObjectID
-    diccionarioObras['ArtistsID']=listaconstituentid
-    diccionarioObras['Medium']=listamedium
-    diccionarioObras['Artists'] = listaconstituentid
-    diccionarioObras['DateAcquired']=DateAcquired
-    diccionarioObras['Dimensions']=Dimensions
-    diccionarioObras['CreditLine']=CreditLine
-    diccionarioObras['Date']=Date
-    diccionarioObras['Department']=Department
-    diccionarioObras['Classification']=Classification
-    diccionarioObras['Height (cm)']=Height
-    diccionarioObras['Width (cm)']=Width
-    diccionarioObras['Length (cm)']=Length
-    diccionarioObras['Weight (kg)']=Weight
-    lt.addLast(catalog['Obras'], diccionarioObras)
-    for i in listaconstituentid:
-        lstArtworksCountry = lt.newList('ARRAY_LIST')
-        if map.contains(catalog['artistID'], i):
-            entryID=map.get(catalog['artistID'], i)
-            name=me.getValue(entryID)
-            entryNacionalidad = map.get(catalog['Artistas'], name)
-            nationality = (me.getValue(entryNacionalidad))['Nationality']
-            if map.contains(catalog['NacionalidadArtistas'], nationality) is False:
-                obras = {}
-                obras['Title'] = title
-                obras['Date']=Date
-                obras['Medium']=listamedium
-                obras['Dimensions']=Dimensions
-                obras['Artists']=listaconstituentid
-                lt.addLast(lstArtworksCountry, obras)
-                map.put(catalog['NacionalidadArtistas'], nationality, lstArtworksCountry)
-            else:
-                entry = map.get(catalog['NacionalidadArtistas'], nationality)
-                lstArtworksCountry = me.getValue(entry)
-                obras={}
-                obras['Title']=title
-                obras['Date']=Date
-                obras['Medium']=listamedium
-                obras['Dimensions']=Dimensions
-                obras['Artists'] = listaconstituentid
-                lt.addLast(lstArtworksCountry, obras)
-        entryIDname = map.get(catalog['artistID'], i)
-        IDname = me.getValue(entryIDname)
-        entryLstArtworks = map.get(catalog['Artistas'], IDname)
-        diccionarioArtista = me.getValue(entryLstArtworks)
-        dictObra={}
-        dictObra['Title']=title
-        dictObra['Date']=Date
-        dictObra['Medium']=listamedium
-        dictObra['Dimensions']=Dimensions
-        dictObra['DateAcquired']=DateAcquired
-        dictObra['Department']=Department
-        dictObra['Dimensions']=Dimensions
-        dictObra['Classification']=Classification
-        lt.addLast(diccionarioArtista['Artworks'], dictObra)
-    if map.contains(catalog['Fecha'], DateAcquired) is False:
-        listaFechas = lt.newList("ARRAY_LIST")
-        fecha = {}
-        fecha['Title'] = title
-        fecha['Date']=Date
-        fecha['Medium']=listamedium
-        fecha['Dimensions']=Dimensions
-        fecha['CreditLine']=CreditLine
-        listaArtworkArtists = lt.newList('ARRAY_LIST')
-        for i in listaconstituentid:
-            entrycID = map.get(catalog['artistID'], i)
-            nameArtist = me.getKey(entrycID)
-            lt.addLast(listaArtworkArtists, nameArtist)
-        fecha['Artists'] = listaArtworkArtists
-        lt.addLast(listaFechas, fecha)
-        map.put(catalog['Fecha'], DateAcquired, listaFechas)
+def addAdquirido(catalog, nameDate, artwork):
+    fechas = catalog['dateAdquirido']
+    existDate = map.contains(fechas, str(nameDate))
+    if existDate:
+        entry = map.get(fechas, str(nameDate))
+        date = me.getValue(entry)
     else:
-        fecha={}
-        entryadDate = map.get(catalog['Fecha'], DateAcquired)
-        listaFecha = me.getValue(entryadDate)
-        fecha['Title']=title
-        fecha['Date']=Date
-        fecha['Medium']=listamedium
-        fecha['Dimensions']=Dimensions
-        fecha['CreditLine']=CreditLine
-        lstArtworkArtists = lt.newList('ARRAY_LIST')
-        for i in listaconstituentid:
-            entrycID = map.get(catalog['artistID'], i)
-            nameArtist = me.getValue(entrycID)
-            lt.addLast(lstArtworkArtists, nameArtist)
-        fecha['Artists'] = lstArtworkArtists
-        lt.addLast(listaFecha, fecha)
-    if map.contains(catalog['Departmento'], Department) is False:
-        listaDepartmento = lt.newList('ARRAY_LIST')
-        departamento={}
-        departamento['Title']=title
-        departamento['Date']=Date
-        departamento['Classification']=Classification
-        departamento['Medium']=listamedium
-        departamento['Dimensions']=Dimensions
-        departamento['Weight (kg)']=Weight
-        departamento['Length (cm)']=Length
-        departamento['Height (cm)']=Height
-        departamento['Width (cm)']=Width
-        lt.addLast(listaDepartmento, departamento)
-        map.put(catalog['Departmento'], Department, listaDepartmento)
+        date = nuevoAdquirido(str(nameDate))
+        map.put(fechas, str(nameDate), date)
+    lt.addLast(date['artworks'], artwork)
+
+
+
+def addTecnica(catalog, namemedium, artwork):
+    tecnicas = catalog['tecnica']
+    existmedium = map.contains(tecnicas, namemedium)
+    if existmedium:
+        entry = map.get(tecnicas, namemedium)
+        medium = me.getValue(entry)
     else:
-        departamento={}
-        entryDep = map.get(catalog['Departmento'], Department)
-        listaDepartmento = me.getValue(entryDep)
-        departamento['Title'] = title
-        departamento['Date']=Date
-        departamento['Classification']=Classification
-        departamento['Medium']=listamedium
-        departamento['Dimensions']=Dimensions
-        departamento['Weight (kg)']=Weight
-        departamento['Length (cm)']=Length
-        departamento['Height (cm)']=Height
-        departamento['Width (cm)']=Width
-        listaArtworkArtists = lt.newList('ARRAY_LIST')
-        for i in listaconstituentid:
-            entrycID = map.get(catalog['artistID'], i)
-            nameArtist = me.getValue(entrycID)
-            lt.addLast(listaArtworkArtists, nameArtist)
-        departamento['Artists'] = listaArtworkArtists
-        lt.addLast(listaDepartmento, departamento)
+        medium = nuevaTecnica(namemedium)
+        map.put(tecnicas, namemedium, medium)
+    lt.addLast(medium['artworks'], artwork)
 
 
-def nuevaObra(title):
-    nuevadiccionarioObra={'Title': "", 'DateAcquired': 0, 'ArtistsID': None, 'Medium': None,'Dimensions': "", 
-                            'ObjectID': 0, "CreditLine": "", "Artists": [], 'Date': "",'Classification': "", 
-                            'Height (cm)': 0, 'Width (cm)': 0, 'Department': "", 'Length (cm)': 0, 'Weight (kg)': 0}
-    nuevadiccionarioObra['Title']=title
-    return nuevadiccionarioObra
+def addNacionalidad(catalog, nameNationality, artwork):
+    nationalities = catalog['nacionalidad']
+    if nameNationality == "":
+        nameNationality = "Nationality unknown"
+    existNationality = map.contains(nationalities, nameNationality)
+    if existNationality:
+        entry = map.get(nationalities, nameNationality)
+        nationality = me.getValue(entry)
+    else:
+        nationality = nuevaNacionalidad(nameNationality)
+        map.put(nationalities, nameNationality, nationality)
+    lt.addLast(nationality['artworks'], artwork)
 
 
-def sortArtists (catalog, anoinicial, anofinal):
-    anokeys = map.keySet(catalog['FechaArtista'])
-    listaAnos = lt.newList('ARRAY_LIST')
-    for ano in lt.iterator(anokeys):
-        if cmpArtistbyBirthDate(anoinicial, anofinal) is not False:
-            if cmpArtistbyBirthDate(ano, anofinal) is not False:
-                lt.addLast(listaAnos, ano)
-    sub_list = listaAnos.copy()
-    sorted_list = None
-    sorted_list = merge.sort(sub_list,cmpArtistbyBirthDate)
-    totalArtists = 0
-    listaFinal=lt.newList('ARRAY_LIST')
-    for i in lt.iterator(sorted_list):
-        entryData = map.get(catalog['FechaArtista'],i)
-        data = me.getValue(entryData)
-        for j in lt.iterator(data):
-            diccionario = {}
-            diccionario['Nombre']=j['name']
-            if j['BeginDate']=='0':
-                diccionario['año nacimiento'] = 'No se tienen datos'
-            else:
-                diccionario['año nacimiento'] = j['BeginDate']
-            if j['EndDate'] == '0':
-                diccionario['año fallecimiento'] = ''
-            else:
-                diccionario['año fallecimiento'] = j['EndDate']
-            diccionario['Nacionalidad'] = j['Nationality']
-            diccionario['Género'] = j['Gender']
-            lt.addLast(listaFinal,diccionario)
-            totalArtists += 1
-    return (listaFinal, totalArtists)
-
-def sortArtworksByAdDate(catalog, d1, d2):
-    dateLst = map.keySet(catalog['Fecha'])
-    finalDateLst = lt.newList('ARRAY_LIST')
-    for date in lt.iterator(dateLst):
-        if cmpArtworkByDateAcquired(d1, date) is True:
-            if cmpArtworkByDateAcquired(date, d2) is True:
-                lt.addLast(finalDateLst, date)
-
-    sub_list = finalDateLst.copy()
-    sorted_list = None
-    sorted_list = merge.sort(sub_list, cmpArtworkByDateAcquired)
-
-    totalArtworks = 0
-    totalPurchasedartworks = 0
-    lstFinal = lt.newList('ARRAY_LIST')
-    for element in lt.iterator(sorted_list):
-        entryData = map.get(catalog['Fecha'], element)
-        data = me.getValue(entryData)
-        adDate = me.getKey(entryData)
-        dicT = {}
-        for lstElement in lt.iterator(data):
-            dicT['Title'] = lstElement['Title']
-            dicT['DateAcquired'] = adDate
-            dicT['Date'] = lstElement['Date']
-            dicT['Artists'] = lstElement['Artists']
-            dicT['Medium'] = lstElement['Medium']
-            dicT['Dimensions'] = lstElement['Dimensions']
-            lt.addLast(lstFinal, dicT)
-            totalArtworks += 1
-            if 'Purchase' in lstElement['CreditLine']:
-                totalPurchasedartworks += 1
-    return lstFinal, totalArtworks, totalPurchasedartworks
+def addDepartmento(catalog, nameDepartment, artwork):
+    departments = catalog['departamento']
+    existDepartment = map.contains(departments, nameDepartment)
+    if existDepartment:
+        entry = map.get(departments, nameDepartment)
+        department = me.getValue(entry)
+    else:
+        department = nuevoDepartamento(nameDepartment)
+        map.put(departments, nameDepartment, department)
+    lt.addLast(department['artworks'], artwork)
 
 
-def ObrasPorNacionalidad(catalog):
-    paises = map.keySet(catalog['NacionalidadArtistas'])
-    lista = lt.newList('ARRAY_LIST')
-    for pais in lt.iterator(paises):
-        if (len(pais) > 0 and (pais!= 'Nationality unknown')):
-            entryPais = map.get(catalog['NacionalidadArtistas'], pais)
-            lstCountry = me.getValue(entryPais)
-            ObrasArtistas = lt.size(lstCountry)
-            map.put(catalog['Nacionalidad'], ObrasArtistas, pais)
-            lt.addLast(lista, ObrasArtistas)
-    sorted_list = None
-    sorted_list = merge.sort(lista, cmpCountriesbyArtworks)
-    listaOrdenada=lt.newList('ARRAY_LIST')
-    for number in lt.iterator(sorted_list):
-        diccionario = {}
-        entryNumber = map.get(catalog['Nacionalidad'], number)
-        NumeroPais = me.getValue(entryNumber)
-        diccionario[NumeroPais] = number
-        lt.addLast(listaOrdenada, diccionario)
-    topPaises = lt.getElement(listaOrdenada, 1)
-    topPaisesLista = list(topPaises.keys())
-    topCountry = topPaisesLista[0]
-    listaVerificada=[]
-    listaDatos = lt.newList('ARRAY_LIST')
-    entryTopCountry = map.get(catalog['NacionalidadArtistas'], topCountry)
-    lstArtworksTopCountry = me.getValue(entryTopCountry)
-    for artwork in lt.iterator(lstArtworksTopCountry):
-        datos={}
-        listaArtistas = lt.newList('ARRAY_LIST')
-        if artwork['Title'] not in listaVerificada:
-            for artista in artwork['Artists']:
-                nombreArtistaEntry = map.get(catalog['artistID'], artista)
-                nombreArtista = me.getValue(nombreArtistaEntry)
-                lt.addLast(listaArtistas, nombreArtista)
-            datos['Title'] = artwork['Title']
-            datos['Artists'] = listaArtistas
-            datos['Date'] = artwork['Date']
-            datos['Medium'] = artwork['Medium']
-            datos['Dimensions'] = artwork['Dimensions']
-            lt.addLast(listaDatos, datos)
-    return listaOrdenada, listaDatos
+def addArtistaObra(catalog, nameArtist, artwork):
+    artistas = catalog['artistaObra']
+    existArtist = map.contains(artistas, nameArtist)
+    if existArtist:
+        entry = map.get(artistas, nameArtist)
+        artist = me.getValue(entry)
+    else:
+        artist = nuevoArtistaObra(nameArtist)
+        map.put(artistas, nameArtist, artist)
+    lt.addLast(artist['artworks'], artwork)
 
 
-def compareBirthArtist(keyname, birthdate):
-    birthEntry = me.getKey(birthdate)
-    if (keyname == birthEntry):
+def addMediumBono(medio, namemedium, artwork):
+    existmedium = map.contains(medio, namemedium)
+    if existmedium:
+        entry = map.get(medio, namemedium)
+        medium = me.getValue(entry)
+    else:
+        medium = nuevaTecnica(namemedium)
+        map.put(medio, namemedium, medium)
+    lt.addLast(medium['artworks'], artwork)
+
+
+def nuevaFecha(nameDate):
+    date = {'name': "",
+            "artists": None}
+    date['name'] = nameDate
+    date['artists'] = lt.newList('SINGLE_LINKED', compareArtistsFechaInicial)
+    return date
+
+
+def nuevoAdquirido(nameDate):
+    date = {'name': "","artworks": None}
+    date['name'] = nameDate
+    date['artworks'] = lt.newList('SINGLE_LINKED', compareArtworksFecha)
+    return date
+
+
+def nuevaTecnica(name):
+    medium = {'name': "","artworks": None}
+    medium['name'] = name
+    medium['artworks'] = lt.newList('SINGLE_LINKED', compararArtworksTecnica)
+    return medium
+
+
+def nuevaNacionalidad(name):
+    nationality = {'name': "","artworks": None}
+    nationality['name'] = name
+    nationality['artworks'] = lt.newList('SINGLE_LINKED', compareArtworksNacionalidad)
+    return nationality
+
+
+def nuevoDepartamento(name):
+    department = {'name': "","artworks": None}
+    department['name'] = name
+    department['artworks'] = lt.newList('SINGLE_LINKED', compareArtworksNacionalidad)
+    return department
+
+
+def nuevoArtistaObra(name):
+    artistaObra = {'name': "","artworks": None}
+    artistaObra['name'] = name
+    artistaObra['artworks'] = lt.newList('SINGLE_LINKED', compareArtworksNacionalidad)
+    return artistaObra
+
+
+def encontrarNombresyNacionalidades(artistas, catalog):
+    nombres = lt.newList(datastructure="ARRAY_LIST")
+    nacionalidades = lt.newList(datastructure="ARRAY_LIST")
+    for id in artistas:
+        encontro = False
+        i = 0
+        while not encontro and i< lt.size(catalog["artists"]):
+            if lt.getElement(catalog["artists"],i)["ConstituentID"] == str(id).strip():
+                lt.addLast(nombres, lt.getElement(catalog["artists"],i)["DisplayName"])
+                lt.addLast(nacionalidades, lt.getElement(catalog["artists"],i)["Nationality"])
+                encontro = True
+            i += 1
+    return nombres, nacionalidades
+
+
+def getArtworksByMedium(catalog, namemedium):
+    medium = map.get(catalog['tecnica'], namemedium)
+    if medium:
+        return me.getValue(medium)
+    return None
+
+
+def artworksNacionalidad(catalog):
+    llaves = map.keySet(catalog["nacionalidad"])
+    lstNacion = lt.newList(datastructure="ARRAY_LIST")
+    for key in lt.iterator(llaves):
+        tamanio = cantidadObrasPais(catalog, key)
+        lt.addLast(lstNacion, (key,tamanio))
+    ordenada = merge.sort(lstNacion, compararNacionalidad)
+    nacionMayor = lt.getElement(ordenada,1)[0]
+    nacion = map.get(catalog["nacionalidad"], nacionMayor)
+    result = (me.getValue(nacion))["artworks"]
+    return ordenada, result
+
+
+def cantidadObrasPais(catalog, nacion):
+    nacion = map.get(catalog["nacionalidad"], nacion)
+    if nacion:
+        result = (me.getValue(nacion))["artworks"]
+        return lt.size(result)
+    return None
+
+
+def transporteDepartamento(catalog, departamento):
+    costo=0
+    peso=0
+    total=0
+    masCostosas=lt.newList(datastructure="ARRAY_LIST")
+    masAntiguas=lt.newList(datastructure="ARRAY_LIST")
+    completaCosto=not True
+    completaAntiguedad=not True
+    listaDepartamento=map.get(catalog["departamento"], departamento)
+    if listaDepartamento:
+        respuesta = (me.getValue(listaDepartamento))["artworks"]
+        for artwork in lt.iterator(respuesta):
+            if departamento==artwork["Department"]:
+                precioObra = precioPorObra(artwork)
+                costo+=precioObra[0]
+                total+=1
+                peso+=precioObra[1]
+                if lt.size(masCostosas) < 5:
+                    lt.addLast(masCostosas, [artwork,precioObra[0]])
+                elif lt.size(masCostosas) == 5 and not completaCosto:
+                    merge.sort(masCostosas, compararCosto)
+                    completaCosto=not False
+                else:
+                    i=5
+                    e1=not True
+                    while i>0 and not e1:
+                        if i==1:
+                            lt.removeLast(masCostosas)
+                            lt.insertElement(masCostosas,[artwork,precioObra[0]], i)
+                            e1 = not False
+                        elif precioObra[0] <= lt.getElement(masCostosas, i)[1]:
+                            e1 = not False
+                        elif precioObra[0] < lt.getElement(masCostosas, i-1)[1]:
+                            lt.removeLast(masCostosas)
+                            lt.insertElement(masCostosas, [artwork,precioObra[0]], i)
+                            e1=not False
+                        else:
+                            i-=1
+                if lt.size(masAntiguas)<5:
+                    lt.addLast(masAntiguas, [artwork,precioObra[0]])
+                elif lt.size(masAntiguas)==5 and not completaAntiguedad:
+                    merge.sort(masAntiguas, compararArtworkDepartamento)
+                    completaAntiguedad = not False
+                else:
+                    i=5
+                    e2=not True
+                    if artwork["Date"] != "":
+                        while i>0 and not e2:
+                            if i==1:
+                                lt.removeLast(masAntiguas)
+                                lt.insertElement(masAntiguas, [artwork,precioObra[0]], i)
+                                e2=not False
+                            elif artwork["Date"]>lt.getElement(masAntiguas, i)[0]["Date"]:
+                                e2=not False
+                            elif artwork["Date"]>lt.getElement(masAntiguas, i-1)[0]["Date"]:
+                                lt.removeLast(masAntiguas)
+                                lt.insertElement(masAntiguas, [artwork,precioObra[0]], i)
+                                e2=not False
+                            else:
+                                i-=1
+    costo=round(costo,2)
+    peso=round(peso,2)
+    return total, costo, peso, masAntiguas, masCostosas
+
+
+def precioPorObra(artwork):
+    peso=0
+    precio=0
+    l=0
+    lado1=1
+    lado2=1
+    lado3=1
+    lado4=1
+    if (artwork["Weight (kg)"]!="") and (artwork["Weight (kg)"]!="0"):
+        precio = 72*float(artwork["Weight (kg)"])
+        peso += float(artwork["Weight (kg)"])
+    if (artwork["Depth (cm)"]!="") and (artwork["Depth (cm)"]!="0"):
+        lado1 = float(artwork["Depth (cm)"])/100
+        l += 1
+    if (artwork["Height (cm)"] !="") and (artwork["Height (cm)"]!="0"):
+        lado2 = float(artwork["Height (cm)"])/100
+        l += 1
+    if (artwork["Length (cm)"]!="") and (artwork["Length (cm)"]!="0"):
+        lado3 = float(artwork["Length (cm)"])/100
+        l += 1
+    if (artwork["Width (cm)"]!="") and (["Width (cm)"]!="0"):
+        lado4 = float(artwork["Width (cm)"])/100
+        l += 1
+    if (artwork["Diameter (cm)"]!="") and (artwork["Diameter (cm)"]!="0") and (l<= 1):
+        areaDiametro = (((((float(artwork["Diameter (cm)"])/2)**2)*math.pi)/10000)*lado1*lado2*lado3*lado4)
+        if areaDiametro * 72 > precio:
+            precio = areaDiametro*72
+    if artwork["Circumference (cm)"] != "" and artwork["Circumference (cm)"] != "0" and l <= 1:
+        areaCircunferencia = ((((float(artwork["Circumference (cm)"])**2)/(4*math.pi))/10000)*lado1*lado2*lado3*lado4)
+        if areaCircunferencia * 72 > precio:
+            precio = areaCircunferencia*72
+    if l==2 or l==3:
+        areaLado = (lado1*lado2*lado3*lado4)
+        if areaLado * 72 > precio:
+            precio = areaLado*72
+    if precio == 0:
+        precio = 48
+    return precio, peso
+
+
+def compareArtistsConstituentID(id1, id2):
+    if (id1 == id2):
         return 0
-    elif (keyname > birthEntry):
+    elif id1 > id2:
         return 1
     else:
         return -1
 
 
-def compareArtistsID(keyname, cID):
-    cIDEntry = me.getKey(cID)
-    if (keyname == cIDEntry):
+def compareArtworksID(id1, id2):
+    if (id1 == id2):
         return 0
-    elif (keyname > cIDEntry):
+    elif id1 > id2:
         return 1
     else:
         return -1
 
 
-def compareNationality(keyname, nationality):
-    nationalityEntry = me.getKey(nationality)
-    if (keyname == nationalityEntry):
+def compareArtistsFechaInicial(date, fecha):
+    llaveFecha = me.getKey(fecha)
+    if (date == llaveFecha):
         return 0
-    elif (keyname > nationalityEntry):
+    elif (date > llaveFecha):
         return 1
     else:
         return -1
 
 
-def compareArtworksByAdDAte(keyname, adDate):
-    dateEntry = me.getKey(adDate)
-    if (keyname == dateEntry):
+def compareArtworksFecha(date1, fecha):
+    llaveFecha=me.getKey(fecha)
+    if (date1==llaveFecha):
         return 0
-    elif (keyname > dateEntry):
+    elif (date1>llaveFecha):
         return 1
     else:
         return -1
 
 
-def compareArtworksByDepartment(keyname, department):
-    depEntry = me.getKey(department)
-    if (keyname == depEntry):
+def compararArtworksTecnica(medium, medio):
+    llaveMedio = me.getKey(medio)
+    if (medium == llaveMedio):
         return 0
-    elif (keyname > depEntry):
+    elif (medium > llaveMedio):
         return 1
     else:
         return -1
 
 
-def compareCountryByNumberOfArtworks(keyname, department):
-    depEntry = me.getKey(department)
-    if (keyname == depEntry):
+def compareArtworksNacionalidad(nationality, nacionalidad):
+    llaveNacionalidad = me.getKey(nacionalidad)
+    if (nationality == llaveNacionalidad):
         return 0
-    elif (keyname > depEntry):
+    elif (nationality > llaveNacionalidad):
         return 1
     else:
         return -1
 
 
+def compararCosto(c1, c2):
+    return c1[1] < c2[1]
 
-# Funciones de ordenamiento
 
-
-def cmpArtworksByDate(artwork1, artwork2):
-
-    r = None
-    date1 = artwork1['Date']
-    date2 = artwork2['Date']
-    if date1 == '':
-        date1 = 2021
-
-    if date2 == '':
-        date2 = 2021
-
-    if int(date1) < int(date2):
-        r = True
+def compareArtworksByArtist(artist, artista):
+    llaveArtista = me.getKey(artista)
+    if (artist == llaveArtista):
+        return 0
+    elif (artist > llaveArtista):
+        return 1
     else:
-        r = False
-    return r
+        return -1
+        
 
-def cmpCountriesbyArtworks(country1, country2):
+def compararNacionalidad(nacionalidad1, nacionalidad2):
+    respuesta=nacionalidad1[1]>nacionalidad2[1]
+    return respuesta
 
-    r = None
-    if country1 > country2:
-        r = True
-    else:
-        r = False
 
-    return r
+def comparaArtworAdquisicion(obra1, obra2):
+    respuesta=(obra1)<(obra2) and obra1 != None and obra2 != None
+    return respuesta
 
-def cmpArtistbyBirthDate(date1, date2):
-    r = None
-    if (int(date1)) <= (int(date2)):
-        r = True
-    else:
-        r = False
-    return r
+def compararObrasTecnica(t1, t2):
+    if t1[0] == "":
+        medio1 = (t1[0],0)
+    if t2[0] == "":
+        medio2 = (t2[0],0)
+    return medio1[1]>medio2[1]
 
-def cmpArtworkByDateAcquired(artwork1, artwork2):
-    """ Devuelve verdadero (True) si el 'DateAcquired' de artwork1 es menores que el de artwork2
-        Args:
-            artwork1: informacion de la primera obra que incluye su valor 'DateAcquired' 
-            artwork2: informacion de la segunda obra que incluye su valor 'DateAcquired' 
-    """
-    date1 = artwork1.split("-")
-    date2 = artwork2.split("-")
-    r = None
-    if (len(date1) < 2):
-        date1 = [2021, 10, 20]
-        artwork1 = '2021-10-02'
-    if (len(date2)) < 2:
-        date2 = [2021, 10, 20]
-        artwork2 = '2021-10-02'
-    
-    if int(date1[0]) < int(date2[0]):
-        r = True
-    elif int(date1[0]) > int(date2[0]):
-        r = False
-    elif int(date1[1]) < int(date2[1]):
-        r = True
-    elif int(date1[1]) > int(date2[1]):
-        r = False
-    elif int(date1[2]) < int(date2[2]):
-        r = True
-    elif int(date1[2]) > int(date2[2]):
-        r = False
 
-    return r
+def compararArtworkDepartamento(obra1, obra2):
+    respuesta=(str(obra1[0]["Date"])<str(obra2[0]["Date"])) and obra1[0]["Date"] != None and obra2[0]["Date"] != None
+    return respuesta
+
+def OrdenarArtistas(catalog,anioI,anioF):
+    artistas = lt.newList(datastructure="ARRAY_LIST")
+    for anio in range(anioI, anioF+1):
+        date = map.get(catalog["fecha"], str(anio))
+        if date:
+            artistsDate = me.getValue(date)['artists']
+            for artist in lt.iterator(artistsDate):
+                lt.addLast(artistas, artist)
+    return artistas
+
+
+def OrdenarArtworks(catalog, anioInicial, mesInicial, diaInicial, anioFinal, mesFinal, diaFinal):
+    obras=lt.newList(datastructure="ARRAY_LIST")
+    fechaInicial=str(dat.datetime(anioInicial, mesInicial, diaInicial))
+    fechaFinal=str(dat.datetime(anioFinal, mesFinal, diaFinal))
+    llaves=map.keySet(catalog["dateAdquirido"])
+    listaLlaves = lt.newList(datastructure="ARRAY_LIST")
+    for llave in lt.iterator(llaves):
+        if llave!=None and llave!="" and fechaInicial<=llave and fechaFinal>=llave:
+            lt.addLast(listaLlaves, llave)
+    llavesOrdenadas = merge.sort(listaLlaves, comparaArtworAdquisicion)
+    adquiridas = 0
+    for llave in lt.iterator(llavesOrdenadas):
+        date = map.get(catalog["dateAdquirido"], str(llave))
+        artworkDate = me.getValue(date)['artworks']
+        for artwork in lt.iterator(artworkDate):
+            lt.addLast(obras, artwork)
+            if "purchase" in artwork["CreditLine"].lower():
+                adquiridas += 1
+    return adquiridas, obras
