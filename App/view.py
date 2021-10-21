@@ -158,14 +158,10 @@ while True:
         print("Tiempo empleado: ",elapsed_time_mseg)
 
     elif int(inputs[0]) == 3:
-        diaInicial = int(input("Ingrese el día incial: "))
-        mesInicial = int(input("Ingrese el mes incial: "))
-        anioInicial = int(input("Ingrese el año incial: "))
-        diaFinal = int(input("Ingrese el día final: "))
-        mesFinal = int(input("Ingrese el mes final: "))
-        anioFinal = int(input("Ingrese el año final: "))
+        aname = int(input("Ingrese el nombre: "))
+
         start_time = time.process_time()
-        printArtworksOrdenado(c.OrdenarArtworks(catalog, anioInicial, mesInicial, diaInicial, anioFinal, mesFinal, diaFinal))
+        printtecnica(c.tecnica(catalog, aname))
         stop_time = time.process_time()
         elapsed_time_mseg = (stop_time - start_time)*1000
         print("Tiempo empleado: ",elapsed_time_mseg)
